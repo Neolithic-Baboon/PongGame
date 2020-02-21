@@ -72,7 +72,7 @@ int main(void)
 		if (!(PINC & (1 << PINC0))) {
 			PORTB |= (1 << PORTB5);
 			DDRC |= (1 << PORTC3);
-			PORTC |= (1 << PORTC0);
+			PORTC |= (1 << PORTC3);
 			PORTC &= ~(1 << PORTC0);
 			y_pos = adc_read(0);
 			DDRC &= ~(1 << PORTC1);
