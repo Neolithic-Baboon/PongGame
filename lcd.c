@@ -38,7 +38,7 @@ uint8_t is_reversed = 0;
 char STRING[10] = "";
 
 int pagemap[] = { 3, 2, 1, 0, 7, 6, 5, 4 };
-
+	
 // buffer input which prints initial splash
 uint8_t buff[128*64/8] = {
 	0x7F,0x7F,0x7F,0x7F,0x71,0x7F,0x71,0x7F,0x7F,0x7F,0x7F,0x7F,0x7E,0x7F,0x7A,0x7B,
@@ -497,12 +497,13 @@ void clearpixel(uint8_t *buff, uint8_t x, uint8_t y) {
 // function to write a string on the lcd
 void drawstring(uint8_t *buff, uint8_t x, uint8_t line, uint8_t *c) {
 	for (uint8_t i = 0; i < strlen(c); i++) {
-		drawchar(buff, x + 5 * i, line, c[i]);
+		drawchar(buff, x + 6 * i, line, c[i]);
 	}
 }
 
 // use bresenham's algorithm to write this function to draw a line
-void drawline(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
+void drawline(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t toggle) { // set toggle bit to 1 for dashed lines. 
+	uint8_t flip = 0;
 	int x, y, dx, dy, swap, temp, s1, s2, p, i;
 	x = x0;
 	y = y0;
@@ -524,6 +525,7 @@ void drawline(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
 	}
 	swap = 0;
 	setpixel(buff, x0, y0);
+	flip++;
 	if (dy > dx) {
 		temp = dx;
 		dx = dy;
@@ -532,7 +534,17 @@ void drawline(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
 	}
 	p = 2 * dy - dx;
 	for (i = 0; i < dx; i++) {
-		setpixel(buff, x, y);
+		if (toggle) {
+			flip++;
+			if (flip >= 3) {
+				setpixel(buff, x, y);
+				if (flip >= 6) {
+					flip = 0;
+				}
+			}
+		} else {
+			setpixel(buff, x, y);
+		}
 		while(p >= 0) {
 			p = p - 2 * dx;
 			if (swap) {
@@ -554,17 +566,17 @@ void drawline(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
 // function to draw a filled rectangle
 void fillrect(uint8_t *buff,uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
 	for (uint8_t i = 0; i < w; i++) {
-		drawline(buff, x + i, y, x + i, y + h);
+		drawline(buff, x + i, y, x + i, y + h, 0);
 	}
 }
 
 
 // function to draw a rectangle
 void drawrect(uint8_t *buff,uint8_t x, uint8_t y, uint8_t w, uint8_t h) {
-	drawline(buff, x, y, x + w, y);
-	drawline(buff, x + w, y, x + w, y + h);
-	drawline(buff, x + w, y + h, x, y + h);
-	drawline(buff, x, y + h, x, y);
+	drawline(buff, x, y, x + w, y, 0);
+	drawline(buff, x + w, y, x + w, y + h, 0);
+	drawline(buff, x + w, y + h, x, y + h, 0);
+	drawline(buff, x, y + h, x, y, 0);
 }
 
 void drawCircleHelper(int x0, int y0, int x, int y)
@@ -585,15 +597,15 @@ void drawcircle(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t r) {
 	int d = 3 - 2 * r;
 	drawCircleHelper(x0, y0, x, y);
 	while (y >= x) {
-		sprintf(STRING, "x: %u y: %u \n", x0 + x, y0 + y);
-		USART_putstring(STRING);
 		x++;
+		drawCircleHelper(x0, y0, x, y);
 		if (d > 0) {
+			sprintf(STRING, "MARK \n");
+			USART_putstring(STRING);
 			y--;
 			d = d + 4 * (x - y) + 10;
-			} else {
+		} else {
 			d = d + 4 * x + 6;
-			drawCircleHelper(x0, y0, x, y);
 			_delay_ms(50);
 		}
 	}
@@ -601,10 +613,10 @@ void drawcircle(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t r) {
 
 void fillCircleHelper(int x0, int y0, int x, int y)
 {
-	drawline(buff, x0 + x, y0 + y, x0 - x, y0 + y);
-	drawline(buff, x0 + x, y0 - y, x0 - x, y0 - y);
-	drawline(buff, x0 + y, y0 + x, x0 - y, y0 + x);
-	drawline(buff, x0 + y, y0 - x, x0 - y, y0 - x);
+	drawline(buff, x0 + x, y0 + y, x0 - x, y0 + y, 0);
+	drawline(buff, x0 + x, y0 - y, x0 - x, y0 - y, 0);
+	drawline(buff, x0 + y, y0 + x, x0 - y, y0 + x, 0);
+	drawline(buff, x0 + y, y0 - x, x0 - y, y0 - x, 0);
 }
 
 // function to draw a filled circle
@@ -614,12 +626,12 @@ void fillcircle(uint8_t *buff,uint8_t x0, uint8_t y0, uint8_t r) {
 	fillCircleHelper(x0, y0, x, y);
 	while (y >= x) {
 		x++;
+		fillCircleHelper(x0, y0, x, y);
 		if (d > 0) {
 			y--;
 			d = d + 4 * (x - y) + 10;
-			} else {
+		} else {
 			d = d + 4 * x + 6;
-			fillCircleHelper(x0, y0, x, y);
 			_delay_ms(50);
 		}
 	}
