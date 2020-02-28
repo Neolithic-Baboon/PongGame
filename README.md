@@ -35,7 +35,7 @@ usart.h is a custom library provided by ESE350 TAs responsible for interpreting 
 
 main.c contains the bulk of the code for PongGame. main.c contains globar variables, interrupt vectors, helper functions, and the main function. 
 
-Global Variables 
+### Global Variables 
 ```C
 #define F_CPU 16000000UL     // clockspeed of atmega328p
 #define FREQ 16000000        // clockspeed of atmega328p 
@@ -65,13 +65,13 @@ int dxdy[4] = { 0, 0 };      // tracks the change in x and change in y of the ba
 uint16_t acc[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // arrary for holding the last 10 values returned from the accelerometer for calculating the moving average 
 ```
 
-Interrupt vectors 
+### Interrupt vectors 
 ```C
-ISR(TIMER1_COMPA_vect);
-ISR(TIMER0_COMPA_vect); 
+ISR(TIMER1_COMPA_vect);   // handles the toggle of LCD color during the win game screen
+ISR(TIMER0_COMPA_vect);   // handles the frequencies of the buzzer when the ball hits a horizontal surface, paddle, or misses the paddle
 ```
 
-Helper Functions 
+### Helper Functions 
 ```C
 void adc_init()               // enables flags for reading adc 
 uint16_t adc_read(uint8_t ch) // reads the adc value at cahnnel input ch 
@@ -87,5 +87,5 @@ void acc_init(void)           // populates the acc array at the start of the pro
 uint16_t acc_mean(void)       // calculates the moving mean of the acc array 
 ```
 
-main function 
+### main function 
 The main function handles the transition of the game itself. It begins by initializing all relevant variables and interrupt flags for the game. The while loop handles the game state itself. Given the value of the game_state variable, different actions are performed. Each iteration of the while loop calculates the input of the touchscreen, and if necessary calls the helper functions to move the paddles and ball. 
